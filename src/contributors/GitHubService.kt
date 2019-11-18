@@ -39,6 +39,16 @@ interface GitHubService {
         @Path("repo") repo: String
     ): Single<List<User>>
 
+    @GET("orgs/{org}/repos?per_page=100")
+    suspend fun getOrgReposCallSuspended(
+        @Path("org") org: String
+    ): Response<List<Repo>>
+
+    @GET("repos/{owner}/{repo}/contributors?per_page=100")
+    suspend fun getRepoContributorsCallSuspended(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Response<List<User>>
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
