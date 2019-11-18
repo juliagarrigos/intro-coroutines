@@ -27,6 +27,18 @@ interface GitHubService {
         @Path("owner") owner: String,
         @Path("repo") repo: String
     ): Call<List<User>>
+
+    @GET("orgs/{org}/repos?per_page=100")
+    fun getOrgReposCallRx(
+        @Path("org") org: String
+    ): Single<List<Repo>>
+
+    @GET("repos/{owner}/{repo}/contributors?per_page=100")
+    fun getRepoContributorsCallRx(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Single<List<User>>
+
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

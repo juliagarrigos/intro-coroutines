@@ -2,6 +2,7 @@ package contributors
 
 import contributors.Contributors.LoadingStatus.*
 import contributors.Variant.*
+import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.swing.Swing
 import tasks.*
@@ -13,14 +14,16 @@ enum class Variant {
     BLOCKING,         // Request1Blocking
     BACKGROUND,       // Request2Background
     CALLBACKS,        // Request3Callbacks
+    RX,
     SUSPEND,          // Request4Coroutine
     CONCURRENT,       // Request5Concurrent
     NOT_CANCELLABLE,  // Request6NotCancellable
     PROGRESS,         // Request6Progress
     CHANNELS          // Request7Channels
+
 }
 
-interface Contributors: CoroutineScope {
+interface Contributors : CoroutineScope {
 
     val job: Job
 
@@ -71,6 +74,15 @@ interface Contributors: CoroutineScope {
                         updateResults(users, startTime)
                     }
                 }
+            }
+            RX -> {
+                loadContributorsRx(service, req)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe ({ result ->
+                        SwingUtilities.invokeLater {
+                            updateResults(result, startTime)
+                        }
+                    }, { error -> log("Error Rx $error")})
             }
             SUSPEND -> { // Using coroutines
                 launch {
@@ -178,8 +190,7 @@ interface Contributors: CoroutineScope {
         val params = getParams()
         if (params.username.isEmpty() && params.password.isEmpty()) {
             removeStoredParams()
-        }
-        else {
+        } else {
             saveParams(params)
         }
     }
