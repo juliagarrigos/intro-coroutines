@@ -19,6 +19,7 @@ enum class Variant {
     CONCURRENT,       // Request5Concurrent
     NOT_CANCELLABLE,  // Request6NotCancellable
     PROGRESS,         // Request6Progress
+    PROGRESS_RX,
     CHANNELS          // Request7Channels
 
 }
@@ -78,11 +79,11 @@ interface Contributors : CoroutineScope {
             RX -> {
                 loadContributorsRx(service, req)
                     .subscribeOn(Schedulers.io())
-                    .subscribe ({ result ->
+                    .subscribe({ result ->
                         SwingUtilities.invokeLater {
                             updateResults(result, startTime)
                         }
-                    }, { error -> log("Error Rx $error")})
+                    }, { error -> log("Error Rx $error") })
             }
             SUSPEND -> { // Using coroutines
                 launch {
@@ -112,6 +113,14 @@ interface Contributors : CoroutineScope {
                         }
                     }
                 }.setUpCancellation()
+            }
+            PROGRESS_RX -> {
+                loadContributorsProgressRx(service, req) { users, completed ->
+                    SwingUtilities.invokeLater {
+                        updateResults(users, startTime, completed)
+                    }
+                }.subscribe()
+
             }
             CHANNELS -> {  // Performing requests concurrently and showing progress
                 launch(Dispatchers.Default) {
