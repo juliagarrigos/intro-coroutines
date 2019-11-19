@@ -8,7 +8,6 @@ suspend fun loadContributorsConcurrent(service: GitHubService, req: RequestData)
         .also { logRepos(req, it) }
         .body() ?: listOf()
 
-    val users = mutableListOf<User>()
     repos.map { repo ->
         async {
             log("starting loading for ${repo.name}")

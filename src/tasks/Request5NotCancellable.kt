@@ -9,7 +9,6 @@ suspend fun loadContributorsNotCancellable(service: GitHubService, req: RequestD
         .also { logRepos(req, it) }
         .body() ?: listOf()
 
-    val users = mutableListOf<User>()
     return repos.map { repo ->
         GlobalScope.async {
             log("starting loading for ${repo.name}")
