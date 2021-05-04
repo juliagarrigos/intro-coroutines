@@ -1,7 +1,7 @@
 package tasks
 
 import contributors.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
 
 suspend fun loadContributorsProgress(
     service: GitHubService,
@@ -10,7 +10,7 @@ suspend fun loadContributorsProgress(
 ) = coroutineScope {
     val repos = service.getOrgReposCallSuspended(req.org)
         .also { logRepos(req, it) }
-        .body() ?: listOf()
+        .bodyList()
 
     var users = emptyList<User>()
     repos.forEachIndexed { index, repo ->
