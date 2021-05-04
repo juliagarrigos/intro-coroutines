@@ -12,17 +12,22 @@ import retrofit2.Response
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-fun loadContributorsRx(service: GitHubService, req: RequestData): Single<List<User>> {
+fun loadContributorsRx(
+    service: GitHubService,
+    req: RequestData,
+    scheduler: Scheduler = Schedulers.io()
+): Single<List<User>> {
 
     return service.getOrgReposCallRx(req.org)
+        .subscribeOn(scheduler)
         .doOnSuccess { response -> logRepos(req, response) }
         .toObservable()
         .flatMapIterable()
-        .flatMap { repo ->
-            service.getRepoContributorsCallRx(req.org, repo.name).toObservable()
-                .subscribeOn(Schedulers.io())
-                .doOnNext { users -> logUsers(repo, users) }
+        .flatMapSingle { repo ->
+            service.getRepoContributorsCallRx(req.org, repo.name)
+                .subscribeOn(scheduler)
+                .doOnSuccess { users -> logUsers(repo, users) }
         }
         .toList()
-        .map { it.flatten().aggregate()}
+        .map { it.flatten().aggregate() }
 }

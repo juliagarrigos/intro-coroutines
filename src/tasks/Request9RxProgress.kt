@@ -13,24 +13,19 @@ import retrofit2.Response
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-fun loadContributorsProgressRx(
-    service: GitHubService,
-    req: RequestData,
-    update: (List<User>, completed: Boolean) -> Unit
-): Completable {
+fun loadContributorsProgressRx(service: GitHubService, req: RequestData, scheduler: Scheduler = Schedulers.io()): Observable<List<User>> {
 
     return service.getOrgReposCallRx(req.org)
+        .subscribeOn(scheduler)
         .doOnSuccess { response -> logRepos(req, response) }
         .toObservable()
         .flatMapIterable()
         .flatMap { repo ->
-            service.getRepoContributorsCallRx(req.org, repo.name).toObservable()
-                .subscribeOn(Schedulers.io())
+            service.getRepoContributorsCallRx(req.org, repo.name)
+                .subscribeOn(scheduler)
+                .toObservable()
                 .doOnNext { users -> logUsers(repo, users) }
-                .map { it.aggregate() }
-                .doOnNext { update(it, false) }
         }
-        .toList().map { it.flatten().aggregate() }
-        .doOnSuccess { update(it, true) }
-        .ignoreElement()
+        .scan<List<User>>(emptyList()) { list1, list2 -> (list1 + list2).aggregate() }
+        .skip(1)
 }

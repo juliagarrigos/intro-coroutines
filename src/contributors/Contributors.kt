@@ -78,7 +78,6 @@ interface Contributors : CoroutineScope {
             }
             RX -> {
                 loadContributorsRx(service, req)
-                    .subscribeOn(Schedulers.io())
                     .subscribe({ result ->
                         SwingUtilities.invokeLater {
                             updateResults(result, startTime)
@@ -115,12 +114,18 @@ interface Contributors : CoroutineScope {
                 }.setUpCancellation()
             }
             PROGRESS_RX -> {
-                loadContributorsProgressRx(service, req) { users, completed ->
-                    SwingUtilities.invokeLater {
-                        updateResults(users, startTime, completed)
+                loadContributorsProgressRx(service, req)
+                    .doOnNext { users ->
+                        SwingUtilities.invokeLater {
+                            updateResults(users, startTime, false)
+                        }
                     }
-                }.subscribe()
-
+                    .doOnComplete {
+                        SwingUtilities.invokeLater {
+                            updateStatus(completed = true, startTime = startTime)
+                        }
+                    }
+                    .subscribe()
             }
             CHANNELS -> {  // Performing requests concurrently and showing progress
                 launch(Dispatchers.Default) {
@@ -148,6 +153,10 @@ interface Contributors : CoroutineScope {
         completed: Boolean = true
     ) {
         updateContributors(users)
+        updateStatus(completed, startTime)
+    }
+
+    private fun updateStatus(completed: Boolean, startTime: Long) {
         updateLoadingStatus(if (completed) COMPLETED else IN_PROGRESS, startTime)
         if (completed) {
             setActionsStatus(newLoadingEnabled = true)

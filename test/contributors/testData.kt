@@ -1,5 +1,9 @@
 package contributors
 
+import io.reactivex.schedulers.TestScheduler
+
+val testScheduler = TestScheduler()
+
 val testRequestData = RequestData("username", "password", "org")
 
 data class TestRepo(val name: String, val delay: Long, val users: List<User>)
