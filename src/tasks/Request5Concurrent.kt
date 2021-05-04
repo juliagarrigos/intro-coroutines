@@ -7,7 +7,7 @@ suspend fun loadContributorsConcurrent(service: GitHubService, req: RequestData)
     return coroutineScope {
         val repos = service.getOrgReposCallSuspended(req.org)
             .also { logRepos(req, it) }
-            .body() ?: listOf()
+            .bodyList()
 
         repos.map { repo ->
             async {

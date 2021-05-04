@@ -4,6 +4,7 @@ import contributors.Contributors.LoadingStatus.*
 import contributors.Variant.*
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.swing.Swing
 import tasks.*
 import java.awt.event.ActionListener
@@ -20,7 +21,8 @@ enum class Variant {
     NOT_CANCELLABLE,  // Request6NotCancellable
     PROGRESS,         // Request6Progress
     PROGRESS_RX,
-    CHANNELS          // Request7Channels
+    CHANNELS,          // Request7Channels
+    FLOW,              //Request8Flow
 
 }
 
@@ -136,6 +138,22 @@ interface Contributors : CoroutineScope {
                     }
                 }.setUpCancellation()
             }
+
+            FLOW -> {
+                loadContributorsFlow(service, req)
+                    .onEach { users ->
+                        SwingUtilities.invokeLater {
+                            updateResults(users, startTime, false)
+                        }
+                    }
+                    .launchIn(this)
+                    .setUpCancellation()
+                    .invokeOnCompletion {
+                        SwingUtilities.invokeLater {
+                            updateStatus(completed = true, startTime = startTime)
+                        }
+                    }
+            }
         }
     }
 
@@ -181,7 +199,7 @@ interface Contributors : CoroutineScope {
         setLoadingStatus(text, status == IN_PROGRESS)
     }
 
-    private fun Job.setUpCancellation() {
+    private fun Job.setUpCancellation(): Job {
         // make active the 'cancel' button
         setActionsStatus(newLoadingEnabled = false, cancellationEnabled = true)
 
@@ -200,6 +218,7 @@ interface Contributors : CoroutineScope {
             setActionsStatus(newLoadingEnabled = true)
             removeCancelListener(listener)
         }
+        return this
     }
 
     fun loadInitialParams() {
